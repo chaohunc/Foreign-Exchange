@@ -174,7 +174,8 @@ public class Preprocesser {
 	    while ((line = labelFileReader.readLine()) != null)
 	    {
 	    	String[] strs = line.split(" ");	
-	    	Pair labelPair = new Pair (Long.parseLong(strs[1]),line.substring(40));
+//	    	Pair labelPair = new Pair (Long.parseLong(strs[1]),line.substring(40));
+	    	Pair labelPair = new Pair (Long.parseLong(strs[1]),strs[9]+" "+strs[10]);
 	    	labelQueue.add(labelPair);
 	    }
 	    
@@ -201,7 +202,7 @@ public class Preprocesser {
 		    		featurePair = featureQueue.peek();
 		    	if (featurePair !=null && labelPair.timestamp == featurePair.timestamp - timeWindows)
 		    	{
-		    		resultQueue.add(new Pair(labelPair.timestamp,new String(featurePair.content+" "+labelPair.content)));		    		
+		    		resultQueue.add(new Pair(labelPair.timestamp,new String(featurePair.content.trim()+" "+labelPair.content)));		    		
 		    		labelQueue.poll();
 		    		featureQueue.poll();
 		    	}
