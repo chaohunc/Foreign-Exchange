@@ -5,10 +5,19 @@ import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Queue;
+import java.util.Set;
+import java.util.TreeMap;
 
 public class Preprocesser {
 	public String readLabelFile(String filename, String scope)
@@ -45,13 +54,13 @@ public class Preprocesser {
 		    	
 		    	if (lineNum!=0&& thisTickMinutes!=lastTickMinutes)
 		    	{
-			    	//System.out.println(thisTickHours +" "+thisTickMinutes+" "+thisTickSeconds);
-
+			 
 		    		StringBuffer strbuf = new StringBuffer();
-		    		strbuf.append(lastStringDate+" "+lastTickYears+" ");
+		    		strbuf.append(lastStringDate);//+lastTickYears+" "+lastTickMonths+" "+lastTickDays+" "+lastTickHours+" "+lastTickMinutes+" "+lastTickSeconds);
 		    		Calendar date = Calendar.getInstance();
 		    		
-		    		date.set(lastTickYears,lastTickMonths,lastTickDays,lastTickHours,lastTickMinutes,lastTickSeconds);
+		    		date.set(lastTickYears,lastTickMonths,lastTickDays,lastTickHours,lastTickMinutes,0);
+		    		date.set(Calendar.MILLISECOND, 0);
 		    		long timestamps= date.getTimeInMillis();
 		    		strbuf.append(timestamps+" ");	
 		    		if(lastTickHours<10)
@@ -120,16 +129,6 @@ public class Preprocesser {
 		    	lastTickMinutes = thisTickMinutes;	
 		    	lastTickSeconds = thisTickSeconds;	
 		    	lineNum++;
-
-		    	//System.out.println(thisTickHours +" "+thisTickMinutes+" "+thisTickSeconds);
-		    	/*
-		    	Row row = new Row();
-		    	
-		    	row.currenciesLabel = line.substring(0, 7);
-		    	row.year = Integer.parseInt(line.substring(8, 12));
-		    	row.month = Integer.parseInt(line.substring(12, 14));
-		    	row.hours = Integer.parseInt(line.substring(14, 16));
-		    	*/
 		    	
 		    }
 		    reader.close();
@@ -162,15 +161,68 @@ public class Preprocesser {
 		return 0;
 	}
 
-	public void combineFeatures(String labelFileName, List<String> featuresFileName) throws FileNotFoundException {
+	public void combineFeatures(String labelFileName, List<String> featuresFileName, String outputFileName) throws IOException {
 		// TODO Auto-generated method stub
+		Queue<Pair> resultQueue = new LinkedList<>();
+		Queue<Pair> labelQueue = new LinkedList<>();
 		ArrayList<Row> rows = new ArrayList<>();
 
 	    BufferedReader labelFileReader = new BufferedReader(new FileReader(labelFileName));
+	    BufferedWriter writer = new BufferedWriter(new FileWriter(outputFileName+"_out"));
+	    
+	    String line;
+	    while ((line = labelFileReader.readLine()) != null)
+	    {
+	    	String[] strs = line.split(" ");	
+	    	Pair labelPair = new Pair (Long.parseLong(strs[1]),line.substring(40));
+	    	labelQueue.add(labelPair);
+	    }
+	    
+	    long timeWindows=60000;
+		Queue<Pair> featureQueue = new LinkedList<>();
+	    
 	    
 	    for (String featureFileName: featuresFileName)
 		{
+	    	
 		    BufferedReader featureFileReader = new BufferedReader(new FileReader(featureFileName));
+		    while ((line = featureFileReader.readLine()) != null)
+		    {
+		    	String[] strs = line.split(" ");	    	
+		    	Pair featurePair = new Pair (Long.parseLong(strs[1]),line.substring(40));
+		    	featureQueue.add(featurePair);
+		    }
+		    
+		    while (labelQueue.size()!=0)
+		    {
+		    	Pair labelPair = labelQueue.peek();
+		    	Pair featurePair=null;
+		    	if (featureQueue.size()!=0)
+		    		featurePair = featureQueue.peek();
+		    	if (featurePair !=null && labelPair.timestamp == featurePair.timestamp - timeWindows)
+		    	{
+		    		resultQueue.add(new Pair(labelPair.timestamp,new String(featurePair.content+" "+labelPair.content)));		    		
+		    		labelQueue.poll();
+		    		featureQueue.poll();
+		    	}
+		    	else if (featurePair==null || labelPair.timestamp < featurePair.timestamp - timeWindows)
+		    	{
+//		    		resultQueue.add(new Pair(labelPair.timestamp,new String(featurePair.content+" "+labelPair.content)));
+		    		resultQueue.add(new Pair(labelPair.timestamp,new String("-1 -1 -1 -1 -1 -1 -1 -1 "+labelPair.content)));
+		    		labelQueue.poll();
+		    	}
+		    	else
+		    	{
+		    		featureQueue.poll();
+		    	}
+		    }
 		}
+	    while (resultQueue.size()!=0)
+	    {
+	    	Pair resultPair = resultQueue.poll();
+	    	writer.write(resultPair.timestamp+" "+resultPair.content+"\n");
+	    }
+	    writer.flush();
+	    writer.close();
 	}
 }

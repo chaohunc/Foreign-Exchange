@@ -1,0 +1,18 @@
+The output data includes 10 columns, 2 for label dataset (USD/EUR close bid direction,USD/EUR close ask direction), 
+the other used as features
+
+1. GBP/USD high bid price in Last minute 
+2. GBP/USD low bid price in Last minute 
+3. GBP/USD close bid price in Last minute 
+4. GBP/USD high ask price in Last minute 
+5. GBP/USD low ask price in Last minute 
+6. GBP/USD close ask price in Last minute 
+7. GBP/USD close bid direction in Last minute 
+8. GBP/USD close ask direction in Last minute 
+9. USD/EUR close bid direction
+10. USD/EUR close ask direction
+
+Since the data is sorted, we could put them in two queues separately for both GBP/USD and USD/EUR.
+If the timestamp of USD/EUR = the timestamp of GBP/USD - 1 mintues, we combine the label and the feature together and poll the queue of GBP/USD and USD/EUR
+If the timestamp of USD/EUR < the timestamp of GBP/USD - 1 mintues, just output the label with marking feature as missing value and poll the queue of USD/EUR
+If the timestamp of USD/EUR > the timestamp of GBP/USD - 1 mintues, just poll the queue of GBP/USD
