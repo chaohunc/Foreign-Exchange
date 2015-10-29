@@ -1,4 +1,0 @@
-Testing Accuracy For a single Decisoin Tree:0.527686222808174
-Testing Accuracy For a Random Forest with 10 numbers of trees: 0.531524852569503
-Testing Accuracy For a Random Forest with 50 numbers of trees: 0.531558550968829
-Testing Accuracy For a Random Forest with 100 numbers of trees: 0.5330749789385004
